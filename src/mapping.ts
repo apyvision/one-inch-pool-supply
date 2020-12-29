@@ -1,4 +1,4 @@
-import {Address, BigDecimal, BigInt, log, ethereum} from "@graphprotocol/graph-ts";
+import {BigDecimal, BigInt, log} from "@graphprotocol/graph-ts";
 import {Deployed} from "../generated/MooniswapFactory/MooniswapFactory";
 import {Erc20, Transfer} from "../generated/templates/Pool/Erc20";
 import {Pool as PoolTemplate} from '../generated/templates'
@@ -29,18 +29,21 @@ function convertTokenToDecimal(tokenAmount: BigInt, exchangeDecimals: BigInt): B
 export function handleNewPool(event: Deployed): void {
   let poolAddress = event.params.mooniswap;
   log.warning("[1inch] Creating factory tracking for pair address: {}", [poolAddress.toHexString()])
+  let pool = Pool.load(poolAddress.toHexString())
+  if (pool == null) {
+    pool = new Pool(poolAddress.toHexString())
+    pool.token1 = event.params.token1
+    pool.token2 = event.params.token2
+    pool.totalSupply = ZERO_BI.toBigDecimal()
+    pool.save()
+  }
   PoolTemplate.create(poolAddress);
 }
 
 export function handleTransfer(event: Transfer): void {
   let poolAddress = event.address;
-  let totalSupply = Erc20.bind(poolAddress).totalSupply();
-
   let pool = Pool.load(poolAddress.toHexString())
-  if (pool == null) {
-    pool = new Pool(poolAddress.toHexString())
-  }
-  pool.totalSupply = convertTokenToDecimal(totalSupply, BI_18);
+  pool.totalSupply = convertTokenToDecimal(Erc20.bind(poolAddress).totalSupply(), BI_18);
   pool.save()
 }
 
