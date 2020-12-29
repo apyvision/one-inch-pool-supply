@@ -1,7 +1,9 @@
 type Pool @entity {
-  id: ID!
-  token1: Bytes!
-  token2: Bytes!
-  totalSupply: BigDecimal!
+    id: ID!
+    token1: Bytes!
+    token2: Bytes!
+    totalSupply: BigDecimal!
+    token1Supply: BigDecimal!
+    token2Supply: BigDecimal!
 }
 

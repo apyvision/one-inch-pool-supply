@@ -1,6 +1,7 @@
-import {BigDecimal, BigInt, log} from "@graphprotocol/graph-ts";
+import {BigDecimal, BigInt, log, ethereum, Address} from "@graphprotocol/graph-ts";
 import {Deployed} from "../generated/MooniswapFactory/MooniswapFactory";
 import {Erc20, Transfer} from "../generated/templates/Pool/Erc20";
+import {Multicall} from "../generated/templates/Pool/Multicall";
 import {Pool as PoolTemplate} from '../generated/templates'
 import {Pool} from "../generated/schema";
 
@@ -35,6 +36,8 @@ export function handleNewPool(event: Deployed): void {
     pool.token1 = event.params.token1
     pool.token2 = event.params.token2
     pool.totalSupply = ZERO_BI.toBigDecimal()
+    pool.token1Supply = ZERO_BI.toBigDecimal()
+    pool.token2Supply = ZERO_BI.toBigDecimal()
     pool.save()
   }
   PoolTemplate.create(poolAddress);
@@ -43,7 +46,19 @@ export function handleNewPool(event: Deployed): void {
 export function handleTransfer(event: Transfer): void {
   let poolAddress = event.address;
   let pool = Pool.load(poolAddress.toHexString())
+
   pool.totalSupply = convertTokenToDecimal(Erc20.bind(poolAddress).totalSupply(), BI_18);
+
+  if (pool.token1.toHexString() == "0x0000000000000000000000000000000000000000") {
+    // use multi call here
+    const bal = Multicall.bind(Address.fromString("0xeefba1e63905ef1d7acba5a8513c70307c1ce441")).getEthBalance(poolAddress)
+    pool.token1Supply = convertTokenToDecimal(bal, BI_18)
+  } else {
+    pool.token1Supply = convertTokenToDecimal(Erc20.bind(pool.token1).balanceOf(poolAddress), BI_18)
+  }
+
+  pool.token2Supply = convertTokenToDecimal(Erc20.bind(pool.token2).balanceOf(poolAddress), BI_18)
+
   pool.save()
 }
 

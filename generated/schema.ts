@@ -68,4 +68,22 @@ export class Pool extends Entity {
   set totalSupply(value: BigDecimal) {
     this.set("totalSupply", Value.fromBigDecimal(value));
   }
+
+  get token1Supply(): BigDecimal {
+    let value = this.get("token1Supply");
+    return value.toBigDecimal();
+  }
+
+  set token1Supply(value: BigDecimal) {
+    this.set("token1Supply", Value.fromBigDecimal(value));
+  }
+
+  get token2Supply(): BigDecimal {
+    let value = this.get("token2Supply");
+    return value.toBigDecimal();
+  }
+
+  set token2Supply(value: BigDecimal) {
+    this.set("token2Supply", Value.fromBigDecimal(value));
+  }
 }
