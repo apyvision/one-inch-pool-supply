@@ -70,7 +70,7 @@ export class Multicall extends ethereum.SmartContract {
   ): Multicall__aggregateResult {
     let result = super.call(
       "aggregate",
-      "aggregate(tuple[]):(uint256,bytes[])",
+      "aggregate((address,bytes)[]):(uint256,bytes[])",
       [ethereum.Value.fromTupleArray(calls)]
     );
 
@@ -85,7 +85,7 @@ export class Multicall extends ethereum.SmartContract {
   ): ethereum.CallResult<Multicall__aggregateResult> {
     let result = super.tryCall(
       "aggregate",
-      "aggregate(tuple[]):(uint256,bytes[])",
+      "aggregate((address,bytes)[]):(uint256,bytes[])",
       [ethereum.Value.fromTupleArray(calls)]
     );
     if (result.reverted) {

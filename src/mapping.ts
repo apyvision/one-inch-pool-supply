@@ -1,5 +1,6 @@
 import {BigDecimal, BigInt, log, ethereum, Address} from "@graphprotocol/graph-ts";
-import {Deployed} from "../generated/MooniswapFactory/MooniswapFactory";
+import {Deployed as DeployedV10} from "../generated/MooniswapFactory/MooniswapFactory";
+import {Deployed as DeployedV11} from "../generated/MooniswapFactoryV11/MooniswapFactoryV11";
 import {Erc20, Transfer} from "../generated/templates/Pool/Erc20";
 import {Multicall} from "../generated/templates/Pool/Multicall";
 import {Pool as PoolTemplate} from '../generated/templates'
@@ -20,6 +21,23 @@ function exponentToBigDecimal(decimals: BigInt): BigDecimal {
   return bd
 }
 
+export function fetchTokenDecimals(tokenAddress: Address): BigInt {
+  // hardcode overrides
+  if (tokenAddress.toHexString() == '0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9') {
+    return BigInt.fromI32(18)
+  }
+
+  let contract = Erc20.bind(tokenAddress)
+  // try types uint8 for decimals
+  let decimalValue = null
+  let decimalResult = contract.try_decimals()
+  if (!decimalResult.reverted) {
+    decimalValue = decimalResult.value
+  }
+  return BigInt.fromI32(decimalValue as i32)
+}
+
+
 function convertTokenToDecimal(tokenAmount: BigInt, exchangeDecimals: BigInt): BigDecimal {
   if (exchangeDecimals == ZERO_BI) {
     return tokenAmount.toBigDecimal()
@@ -27,7 +45,23 @@ function convertTokenToDecimal(tokenAmount: BigInt, exchangeDecimals: BigInt): B
   return tokenAmount.toBigDecimal().div(exponentToBigDecimal(exchangeDecimals))
 }
 
-export function handleNewPool(event: Deployed): void {
+export function handleNewPool(event: DeployedV10): void {
+  let poolAddress = event.params.mooniswap;
+  log.warning("[1inch] Creating factory tracking for pair address: {}", [poolAddress.toHexString()])
+  let pool = Pool.load(poolAddress.toHexString())
+  if (pool == null) {
+    pool = new Pool(poolAddress.toHexString())
+    pool.token1 = event.params.token1
+    pool.token2 = event.params.token2
+    pool.totalSupply = ZERO_BI.toBigDecimal()
+    pool.token1Supply = ZERO_BI.toBigDecimal()
+    pool.token2Supply = ZERO_BI.toBigDecimal()
+    pool.save()
+  }
+  PoolTemplate.create(poolAddress);
+}
+
+export function handleNewPoolV11(event: DeployedV11): void {
   let poolAddress = event.params.mooniswap;
   log.warning("[1inch] Creating factory tracking for pair address: {}", [poolAddress.toHexString()])
   let pool = Pool.load(poolAddress.toHexString())
@@ -54,10 +88,12 @@ export function handleTransfer(event: Transfer): void {
     const bal = Multicall.bind(Address.fromString("0xeefba1e63905ef1d7acba5a8513c70307c1ce441")).getEthBalance(poolAddress)
     pool.token1Supply = convertTokenToDecimal(bal, BI_18)
   } else {
-    pool.token1Supply = convertTokenToDecimal(Erc20.bind(pool.token1).balanceOf(poolAddress), BI_18)
+    let tokenAddress = Address.fromString(pool.token1.toHexString());
+    pool.token1Supply = convertTokenToDecimal(Erc20.bind(tokenAddress).balanceOf(poolAddress), fetchTokenDecimals(tokenAddress))
   }
 
-  pool.token2Supply = convertTokenToDecimal(Erc20.bind(pool.token2).balanceOf(poolAddress), BI_18)
+  let tokenAddress = Address.fromString(pool.token2.toHexString());
+  pool.token2Supply = convertTokenToDecimal(Erc20.bind(tokenAddress).balanceOf(poolAddress), fetchTokenDecimals(tokenAddress))
 
   pool.save()
 }
