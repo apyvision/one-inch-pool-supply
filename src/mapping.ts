@@ -5,6 +5,7 @@ import {Erc20, Transfer} from "../generated/templates/Pool/Erc20";
 import {Multicall} from "../generated/templates/Pool/Multicall";
 import {Pool as PoolTemplate} from '../generated/templates'
 import {Pool} from "../generated/schema";
+import {PoolAbi} from "../generated/templates/Pool/PoolAbi";
 
 
 let BI_8 = BigInt.fromI32(8)
@@ -80,6 +81,7 @@ export function handleNewPoolV11(event: DeployedV11): void {
 export function handleTransfer(event: Transfer): void {
   let poolAddress = event.address;
   let pool = Pool.load(poolAddress.toHexString())
+  let poolContract = PoolAbi.bind(poolAddress);
 
   pool.totalSupply = convertTokenToDecimal(Erc20.bind(poolAddress).totalSupply(), BI_18);
 
@@ -94,6 +96,9 @@ export function handleTransfer(event: Transfer): void {
 
   let tokenAddress = Address.fromString(pool.token2.toHexString());
   pool.token2Supply = convertTokenToDecimal(Erc20.bind(tokenAddress).balanceOf(poolAddress), fetchTokenDecimals(tokenAddress))
+
+  pool.fee = convertTokenToDecimal(poolContract.fee(), BI_18)
+  pool.slippageFee = convertTokenToDecimal(poolContract.slippageFee(), BI_18)
 
   pool.save()
 }

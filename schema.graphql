@@ -5,5 +5,7 @@ type Pool @entity {
     totalSupply: BigDecimal!
     token1Supply: BigDecimal!
     token2Supply: BigDecimal!
+    fee: BigDecimal!
+    slippageFee: BigDecimal!
 }
 

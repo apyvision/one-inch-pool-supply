@@ -49,7 +49,7 @@ templates:
     name: Pool
     network: mainnet
     source:
-      abi: Erc20
+      abi: PoolAbi
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.4
@@ -60,6 +60,8 @@ templates:
       abis:
         - name: Erc20
           file: ./abis/ERC20.json
+        - name: PoolAbi
+          file: ./abis/PoolAbi.json
         - name: Multicall
           file: ./abis/MultiCall.json
       eventHandlers:

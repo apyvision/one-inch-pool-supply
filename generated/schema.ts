@@ -86,4 +86,22 @@ export class Pool extends Entity {
   set token2Supply(value: BigDecimal) {
     this.set("token2Supply", Value.fromBigDecimal(value));
   }
+
+  get fee(): BigDecimal {
+    let value = this.get("fee");
+    return value.toBigDecimal();
+  }
+
+  set fee(value: BigDecimal) {
+    this.set("fee", Value.fromBigDecimal(value));
+  }
+
+  get slippageFee(): BigDecimal {
+    let value = this.get("slippageFee");
+    return value.toBigDecimal();
+  }
+
+  set slippageFee(value: BigDecimal) {
+    this.set("slippageFee", Value.fromBigDecimal(value));
+  }
 }
